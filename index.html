@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주사위 대결</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1f1c2c, #928dab);
+    font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+    color: #fff;
+  }
+  .container {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px 40px;
+    width: 460px;
+    max-width: 92vw;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    text-align: center;
+  }
+  h1 { margin-top: 0; font-size: 26px; letter-spacing: 1px; }
+  .scoreboard {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    font-size: 15px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    padding: 10px 15px;
+  }
+  .score { text-align: center; flex: 1; }
+  .score .label { opacity: 0.7; font-size: 12px; }
+  .score .value { font-size: 22px; font-weight: bold; }
+  .players {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin: 25px 0;
+  }
+  .player-box { flex: 1; }
+  .player-name { font-size: 14px; margin-bottom: 10px; opacity: 0.85; }
+  .dice {
+    width: 90px;
+    height: 90px;
+    background: #fff;
+    border-radius: 16px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 12px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    transition: transform 0.15s;
+  }
+  .dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #2b2b2b;
+    margin: auto;
+    opacity: 0;
+  }
+  .rolling { animation: shake 0.1s infinite; }
+  @keyframes shake {
+    0% { transform: rotate(-8deg); }
+    50% { transform: rotate(8deg); }
+    100% { transform: rotate(-8deg); }
+  }
+  .vs {
+    font-size: 24px;
+    font-weight: bold;
+    opacity: 0.6;
+    padding: 0 10px;
+  }
+  .result {
+    min-height: 30px;
+    font-size: 17px;
+    font-weight: bold;
+    margin: 15px 0;
+  }
+  .win { color: #7CFC9A; }
+  .lose { color: #FF8080; }
+  .draw { color: #FFD966; }
+  button {
+    background: linear-gradient(135deg, #ff9966, #ff5e62);
+    border: none;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 12px 28px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 6px 14px rgba(255, 94, 98, 0.4);
+  }
+  button:hover { transform: translateY(-2px); }
+  button:active { transform: translateY(0); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .reset-btn {
+    background: rgba(255,255,255,0.15);
+    box-shadow: none;
+    margin-left: 10px;
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+  .rounds { font-size: 13px; opacity: 0.7; margin-top: 10px; }
+
+  /* dot positions per dice face using nth-child of dot container mapped via data attr */
+  .dice[data-num="1"] .dot:nth-child(5) { opacity: 1; }
+  .dice[data-num="2"] .dot:nth-child(1) { opacity: 1; }
+  .dice[data-num="2"] .dot:nth-child(9) { opacity: 1; }
+  .dice[data-num="3"] .dot:nth-child(1) { opacity: 1; }
+  .dice[data-num="3"] .dot:nth-child(5) { opacity: 1; }
+  .dice[data-num="3"] .dot:nth-child(9) { opacity: 1; }
+  .dice[data-num="4"] .dot:nth-child(1) { opacity: 1; }
+  .dice[data-num="4"] .dot:nth-child(3) { opacity: 1; }
+  .dice[data-num="4"] .dot:nth-child(7) { opacity: 1; }
+  .dice[data-num="4"] .dot:nth-child(9) { opacity: 1; }
+  .dice[data-num="5"] .dot:nth-child(1) { opacity: 1; }
+  .dice[data-num="5"] .dot:nth-child(3) { opacity: 1; }
+  .dice[data-num="5"] .dot:nth-child(5) { opacity: 1; }
+  .dice[data-num="5"] .dot:nth-child(7) { opacity: 1; }
+  .dice[data-num="5"] .dot:nth-child(9) { opacity: 1; }
+  .dice[data-num="6"] .dot:nth-child(1) { opacity: 1; }
+  .dice[data-num="6"] .dot:nth-child(3) { opacity: 1; }
+  .dice[data-num="6"] .dot:nth-child(4) { opacity: 1; }
+  .dice[data-num="6"] .dot:nth-child(6) { opacity: 1; }
+  .dice[data-num="6"] .dot:nth-child(7) { opacity: 1; }
+  .dice[data-num="6"] .dot:nth-child(9) { opacity: 1; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎲 주사위 대결 게임</h1>
+
+    <div class="scoreboard">
+      <div class="score">
+        <div class="label">나의 승리</div>
+        <div class="value" id="playerWins">0</div>
+      </div>
+      <div class="score">
+        <div class="label">무승부</div>
+        <div class="value" id="draws">0</div>
+      </div>
+      <div class="score">
+        <div class="label">컴퓨터 승리</div>
+        <div class="value" id="cpuWins">0</div>
+      </div>
+    </div>
+
+    <div class="players">
+      <div class="player-box">
+        <div class="player-name">🧑 나</div>
+        <div class="dice" id="playerDice" data-num="1">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+      </div>
+      <div class="vs">VS</div>
+      <div class="player-box">
+        <div class="player-name">🤖 컴퓨터</div>
+        <div class="dice" id="cpuDice" data-num="1">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <button id="rollBtn">주사위 굴리기</button>
+    <button id="autoBtn" class="reset-btn">🔁 자동 굴리기 시작</button>
+    <button id="resetBtn" class="reset-btn">기록 초기화</button>
+
+    <div class="rounds" id="rounds">총 라운드: 0</div>
+  </div>
+
+<script>
+  const playerDice = document.getElementById('playerDice');
+  const cpuDice = document.getElementById('cpuDice');
+  const rollBtn = document.getElementById('rollBtn');
+  const autoBtn = document.getElementById('autoBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const resultEl = document.getElementById('result');
+  const playerWinsEl = document.getElementById('playerWins');
+  const cpuWinsEl = document.getElementById('cpuWins');
+  const drawsEl = document.getElementById('draws');
+  const roundsEl = document.getElementById('rounds');
+
+  let stats = { playerWins: 0, cpuWins: 0, draws: 0, rounds: 0 };
+
+  function loadStats() {
+    const saved = localStorage.getItem('diceGameStats');
+    if (saved) {
+      stats = JSON.parse(saved);
+      updateScoreboard();
+    }
+  }
+
+  function saveStats() {
+    localStorage.setItem('diceGameStats', JSON.stringify(stats));
+  }
+
+  function updateScoreboard() {
+    playerWinsEl.textContent = stats.playerWins;
+    cpuWinsEl.textContent = stats.cpuWins;
+    drawsEl.textContent = stats.draws;
+    roundsEl.textContent = `총 라운드: ${stats.rounds}`;
+  }
+
+  function randomDice() {
+    return Math.floor(Math.random() * 6) + 1;
+  }
+
+  function rollAnimation(el, finalNum, duration) {
+    return new Promise(resolve => {
+      el.classList.add('rolling');
+      const interval = setInterval(() => {
+        el.setAttribute('data-num', randomDice());
+      }, 60);
+      setTimeout(() => {
+        clearInterval(interval);
+        el.classList.remove('rolling');
+        el.setAttribute('data-num', finalNum);
+        resolve();
+      }, duration);
+    });
+  }
+
+  async function playRound() {
+    rollBtn.disabled = true;
+    resultEl.textContent = '';
+    resultEl.className = 'result';
+
+    const playerNum = randomDice();
+    const cpuNum = randomDice();
+
+    await Promise.all([
+      rollAnimation(playerDice, playerNum, 700),
+      rollAnimation(cpuDice, cpuNum, 900)
+    ]);
+
+    stats.rounds++;
+
+    if (playerNum > cpuNum) {
+      stats.playerWins++;
+      resultEl.textContent = `🎉 승리! (${playerNum} vs ${cpuNum})`;
+      resultEl.classList.add('win');
+    } else if (playerNum < cpuNum) {
+      stats.cpuWins++;
+      resultEl.textContent = `😢 패배... (${playerNum} vs ${cpuNum})`;
+      resultEl.classList.add('lose');
+    } else {
+      stats.draws++;
+      resultEl.textContent = `🤝 무승부 (${playerNum} vs ${cpuNum})`;
+      resultEl.classList.add('draw');
+    }
+
+    updateScoreboard();
+    saveStats();
+    rollBtn.disabled = false;
+
+    if (autoRolling) {
+      autoTimeout = setTimeout(playRound, 500);
+    }
+  }
+
+  let autoRolling = false;
+  let autoTimeout = null;
+
+  rollBtn.addEventListener('click', playRound);
+
+  autoBtn.addEventListener('click', () => {
+    autoRolling = !autoRolling;
+    if (autoRolling) {
+      autoBtn.textContent = '⏹ 자동 굴리기 중지';
+      rollBtn.disabled = true;
+      playRound();
+    } else {
+      autoBtn.textContent = '🔁 자동 굴리기 시작';
+      clearTimeout(autoTimeout);
+      rollBtn.disabled = false;
+    }
+  });
+
+  resetBtn.addEventListener('click', () => {
+    autoRolling = false;
+    clearTimeout(autoTimeout);
+    autoBtn.textContent = '🔁 자동 굴리기 시작';
+    stats = { playerWins: 0, cpuWins: 0, draws: 0, rounds: 0 };
+    updateScoreboard();
+    saveStats();
+    resultEl.textContent = '';
+    resultEl.className = 'result';
+    playerDice.setAttribute('data-num', '1');
+    cpuDice.setAttribute('data-num', '1');
+  });
+
+  loadStats();
+</script>
+</body>
+</html>
