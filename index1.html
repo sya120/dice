@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주사위 게임 (3인용)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1f1c2c, #928dab);
+    font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
+    color: #fff;
+  }
+  .container {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px 40px;
+    width: 620px;
+    max-width: 94vw;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    text-align: center;
+  }
+  h1 { margin-top: 0; font-size: 24px; letter-spacing: 1px; }
+  .setup {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .setup input {
+    width: 110px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: none;
+    text-align: center;
+    font-size: 14px;
+  }
+  .scoreboard {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    font-size: 14px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .score { text-align: center; flex: 1; }
+  .score .label { opacity: 0.7; font-size: 12px; }
+  .score .value { font-size: 20px; font-weight: bold; }
+  .players {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    margin: 25px 0;
+    gap: 10px;
+  }
+  .player-box {
+    flex: 1;
+    padding: 10px;
+    border-radius: 14px;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .player-box.winner {
+    background: rgba(124, 252, 154, 0.18);
+    box-shadow: 0 0 0 2px rgba(124, 252, 154, 0.6);
+  }
+  .player-name { font-size: 14px; margin-bottom: 10px; opacity: 0.9; font-weight: bold; }
+  .dice {
+    width: 80px;
+    height: 80px;
+    background: #fff;
+    border-radius: 16px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    padding: 11px;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+    transition: transform 0.15s;
+  }
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #2b2b2b;
+    margin: auto;
+    opacity: 0;
+  }
+  .rolling { animation: shake 0.1s infinite; }
+  @keyframes shake {
+    0% { transform: rotate(-8deg); }
+    50% { transform: rotate(8deg); }
+    100% { transform: rotate(-8deg); }
+  }
+  .result {
+    min-height: 30px;
+    font-size: 17px;
+    font-weight: bold;
+    margin: 15px 0;
+  }
+  .win { color: #7CFC9A; }
+  .draw { color: #FFD966; }
+  button {
+    background: linear-gradient(135deg, #ff9966, #ff5e62);
+    border: none;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 12px 28px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    box-shadow: 0 6px 14px rgba(255, 94, 98, 0.4);
+  }
+  button:hover { transform: translateY(-2px); }
+  button:active { transform: translateY(0); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  .reset-btn {
+    background: rgba(255,255,255,0.15);
+    box-shadow: none;
+    margin-left: 10px;
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+  .rounds { font-size: 13px; opacity: 0.7; margin-top: 10px; }
+
+  .dice[data-num="1"] .dot:nth-child(5) { opacity: 1; }
+  .dice[data-num="2"] .dot:nth-child(1) { opacity: 1; }
+  .dice[data-num="2"] .dot:nth-child(9) { opacity: 1; }
+  .dice[data-num="3"] .dot:nth-child(1) { opacity: 1; }
+  .dice[data-num="3"] .dot:nth-child(5) { opacity: 1; }
+  .dice[data-num="3"] .dot:nth-child(9) { opacity: 1; }
+  .dice[data-num="4"] .dot:nth-child(1) { opacity: 1; }
+  .dice[data-num="4"] .dot:nth-child(3) { opacity: 1; }
+  .dice[data-num="4"] .dot:nth-child(7) { opacity: 1; }
+  .dice[data-num="4"] .dot:nth-child(9) { opacity: 1; }
+  .dice[data-num="5"] .dot:nth-child(1) { opacity: 1; }
+  .dice[data-num="5"] .dot:nth-child(3) { opacity: 1; }
+  .dice[data-num="5"] .dot:nth-child(5) { opacity: 1; }
+  .dice[data-num="5"] .dot:nth-child(7) { opacity: 1; }
+  .dice[data-num="5"] .dot:nth-child(9) { opacity: 1; }
+  .dice[data-num="6"] .dot:nth-child(1) { opacity: 1; }
+  .dice[data-num="6"] .dot:nth-child(3) { opacity: 1; }
+  .dice[data-num="6"] .dot:nth-child(4) { opacity: 1; }
+  .dice[data-num="6"] .dot:nth-child(6) { opacity: 1; }
+  .dice[data-num="6"] .dot:nth-child(7) { opacity: 1; }
+  .dice[data-num="6"] .dot:nth-child(9) { opacity: 1; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎲 주사위 대결 게임 (3인용)</h1>
+
+    <div class="setup">
+      <input id="name1" value="플레이어1" maxlength="10">
+      <input id="name2" value="플레이어2" maxlength="10">
+      <input id="name3" value="플레이어3" maxlength="10">
+    </div>
+
+    <div class="scoreboard">
+      <div class="score">
+        <div class="label" id="label1">플레이어1 승리</div>
+        <div class="value" id="wins1">0</div>
+      </div>
+      <div class="score">
+        <div class="label">무승부</div>
+        <div class="value" id="draws">0</div>
+      </div>
+      <div class="score">
+        <div class="label" id="label2">플레이어2 승리</div>
+        <div class="value" id="wins2">0</div>
+      </div>
+      <div class="score">
+        <div class="label" id="label3">플레이어3 승리</div>
+        <div class="value" id="wins3">0</div>
+      </div>
+    </div>
+
+    <div class="players">
+      <div class="player-box" id="box1">
+        <div class="player-name" id="pname1">플레이어1</div>
+        <div class="dice" id="dice1" data-num="1">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+      </div>
+      <div class="player-box" id="box2">
+        <div class="player-name" id="pname2">플레이어2</div>
+        <div class="dice" id="dice2" data-num="1">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+      </div>
+      <div class="player-box" id="box3">
+        <div class="player-name" id="pname3">플레이어3</div>
+        <div class="dice" id="dice3" data-num="1">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result" id="result"></div>
+
+    <button id="rollBtn">주사위 굴리기</button>
+    <button id="autoBtn" class="reset-btn">🔁 자동 굴리기 시작</button>
+    <button id="resetBtn" class="reset-btn">기록 초기화</button>
+
+    <div class="rounds" id="rounds">총 라운드: 0</div>
+  </div>
+
+<script>
+  const diceEls = [null, document.getElementById('dice1'), document.getElementById('dice2'), document.getElementById('dice3')];
+  const boxEls = [null, document.getElementById('box1'), document.getElementById('box2'), document.getElementById('box3')];
+  const nameInputs = [null, document.getElementById('name1'), document.getElementById('name2'), document.getElementById('name3')];
+  const pnameEls = [null, document.getElementById('pname1'), document.getElementById('pname2'), document.getElementById('pname3')];
+  const labelEls = [null, document.getElementById('label1'), document.getElementById('label2'), document.getElementById('label3')];
+  const winsEls = [null, document.getElementById('wins1'), document.getElementById('wins2'), document.getElementById('wins3')];
+
+  const rollBtn = document.getElementById('rollBtn');
+  const autoBtn = document.getElementById('autoBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  const resultEl = document.getElementById('result');
+  const drawsEl = document.getElementById('draws');
+  const roundsEl = document.getElementById('rounds');
+
+  let stats = { wins: [0, 0, 0, 0], draws: 0, rounds: 0 };
+  let autoRolling = false;
+  let autoTimeout = null;
+
+  function getNames() {
+    return [null, nameInputs[1].value.trim() || '플레이어1', nameInputs[2].value.trim() || '플레이어2', nameInputs[3].value.trim() || '플레이어3'];
+  }
+
+  function updateNamesDisplay() {
+    const names = getNames();
+    for (let i = 1; i <= 3; i++) {
+      pnameEls[i].textContent = names[i];
+      labelEls[i].textContent = names[i] + ' 승리';
+    }
+  }
+
+  nameInputs.slice(1).forEach(inp => inp.addEventListener('input', updateNamesDisplay));
+
+  function loadStats() {
+    const saved = localStorage.getItem('diceGameStats3p');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.wins && parsed.wins.length === 4) stats = parsed;
+    }
+    updateScoreboard();
+  }
+
+  function saveStats() {
+    localStorage.setItem('diceGameStats3p', JSON.stringify(stats));
+  }
+
+  function updateScoreboard() {
+    winsEls[1].textContent = stats.wins[1];
+    winsEls[2].textContent = stats.wins[2];
+    winsEls[3].textContent = stats.wins[3];
+    drawsEl.textContent = stats.draws;
+    roundsEl.textContent = `총 라운드: ${stats.rounds}`;
+  }
+
+  function randomDice() {
+    return Math.floor(Math.random() * 6) + 1;
+  }
+
+  function rollAnimation(el, finalNum, duration) {
+    return new Promise(resolve => {
+      el.classList.add('rolling');
+      const interval = setInterval(() => {
+        el.setAttribute('data-num', randomDice());
+      }, 60);
+      setTimeout(() => {
+        clearInterval(interval);
+        el.classList.remove('rolling');
+        el.setAttribute('data-num', finalNum);
+        resolve();
+      }, duration);
+    });
+  }
+
+  async function playRound() {
+    rollBtn.disabled = true;
+    resultEl.textContent = '';
+    resultEl.className = 'result';
+    boxEls.slice(1).forEach(b => b.classList.remove('winner'));
+
+    const names = getNames();
+    const rolls = [null, randomDice(), randomDice(), randomDice()];
+    const durations = [null, 700, 850, 1000];
+
+    await Promise.all([1, 2, 3].map(i => rollAnimation(diceEls[i], rolls[i], durations[i])));
+
+    stats.rounds++;
+
+    const maxVal = Math.max(rolls[1], rolls[2], rolls[3]);
+    const winners = [1, 2, 3].filter(i => rolls[i] === maxVal);
+
+    const rollText = `(${names[1]}:${rolls[1]} / ${names[2]}:${rolls[2]} / ${names[3]}:${rolls[3]})`;
+
+    if (winners.length === 1) {
+      const w = winners[0];
+      stats.wins[w]++;
+      boxEls[w].classList.add('winner');
+      resultEl.textContent = `🎉 ${names[w]} 승리! ${rollText}`;
+      resultEl.classList.add('win');
+    } else {
+      stats.draws++;
+      winners.forEach(w => boxEls[w].classList.add('winner'));
+      const drawNames = winners.map(w => names[w]).join(', ');
+      resultEl.textContent = `🤝 무승부 (${drawNames}) ${rollText}`;
+      resultEl.classList.add('draw');
+    }
+
+    updateScoreboard();
+    saveStats();
+    rollBtn.disabled = false;
+
+    if (autoRolling) {
+      autoTimeout = setTimeout(playRound, 600);
+    }
+  }
+
+  rollBtn.addEventListener('click', playRound);
+
+  autoBtn.addEventListener('click', () => {
+    autoRolling = !autoRolling;
+    if (autoRolling) {
+      autoBtn.textContent = '⏹ 자동 굴리기 중지';
+      rollBtn.disabled = true;
+      playRound();
+    } else {
+      autoBtn.textContent = '🔁 자동 굴리기 시작';
+      clearTimeout(autoTimeout);
+      rollBtn.disabled = false;
+    }
+  });
+
+  resetBtn.addEventListener('click', () => {
+    autoRolling = false;
+    clearTimeout(autoTimeout);
+    autoBtn.textContent = '🔁 자동 굴리기 시작';
+    stats = { wins: [0, 0, 0, 0], draws: 0, rounds: 0 };
+    updateScoreboard();
+    saveStats();
+    resultEl.textContent = '';
+    resultEl.className = 'result';
+    boxEls.slice(1).forEach(b => b.classList.remove('winner'));
+    [1, 2, 3].forEach(i => diceEls[i].setAttribute('data-num', '1'));
+  });
+
+  updateNamesDisplay();
+  loadStats();
+</script>
+</body>
+</html>
